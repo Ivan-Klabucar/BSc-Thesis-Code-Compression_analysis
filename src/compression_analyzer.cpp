@@ -10,15 +10,18 @@
 
 #include "bioparser/fastq_parser.hpp"
 #include "biosoup/sequence.hpp"
+#include "biosoup/nucleic_acid.hpp"
 
 #define VERSION "v0.1.9"
 
 static int help_flag = 0;         /* Flag set by �--help�.    */
 static int version_flag = 0;      /* Flag set by �--version�. */
 static int quality_csv_flag = 0;      /* Flag set by �--file�. */
+static int test_flag = 0;      /* Flag set by �--test�. */
 static std::string csv_filename;
 
 std::atomic<std::uint32_t> biosoup::Sequence::num_objects{0};
+std::atomic<std::uint32_t> biosoup::NucleicAcid::num_objects{0};
 
 void make_quality_csv_file(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
     std::unordered_map<char, uint32_t> quality_freq;
@@ -32,6 +35,10 @@ void make_quality_csv_file(const std::vector<std::unique_ptr<biosoup::Sequence>>
         csv_file << std::to_string(it.first) << ',' << std::to_string(it.second) << std::endl;
     }
     csv_file.close();
+}
+
+void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
+    biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
@@ -81,13 +88,14 @@ int main (int argc, char **argv) {
                 /* These options set a flag. */
                 {"help",    no_argument, &help_flag,    1},
                 {"version", no_argument, &version_flag, 1},
+                {"test", no_argument, &test_flag, 1},
                 {"file-csv",    required_argument, 0, 'f'},
                 {0, 0, 0, 0}
             };
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "hvqf:",
+        c = getopt_long(argc, argv, "hvtf:",
                         long_options, &option_index);
 
         /* Detect the end of the options. */
@@ -104,6 +112,10 @@ int main (int argc, char **argv) {
 
         case 'v':
             version_flag = 1;
+            break;
+        
+        case 't':
+            test_flag = 1;
             break;
 
         case 'f':
@@ -149,6 +161,10 @@ int main (int argc, char **argv) {
         if (quality_csv_flag) {
             make_quality_csv_file(fragments);
             std::cout << "CSV file successfully created." << std::endl;
+        }
+        if (test_flag) {
+            test_compression(fragments[0]);
+            std::cout << "Tested compression successfully." << std::endl;
         }
     }
 

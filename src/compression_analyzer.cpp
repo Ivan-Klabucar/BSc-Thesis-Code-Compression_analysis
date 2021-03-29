@@ -39,6 +39,7 @@ void make_quality_csv_file(const std::vector<std::unique_ptr<biosoup::Sequence>>
 
 void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
+    std::cout << "Inflated quality: \n" << nucleic_acid.InflateQuality() << std::endl;
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {

@@ -7,6 +7,7 @@
 #include <atomic>
 #include <fstream>
 #include <unordered_map>
+#include <stdexcept>
 
 #include "bioparser/fastq_parser.hpp"
 #include "biosoup/sequence.hpp"
@@ -37,9 +38,20 @@ void make_quality_csv_file(const std::vector<std::unique_ptr<biosoup::Sequence>>
     csv_file.close();
 }
 
+double avg_compression_loss(std::string& true_quality, std::string compressed_quality) {
+    if ( true_quality.size() != compressed_quality.size() ) throw std::invalid_argument("True quality and compressed quality not of same size!");
+    int64_t diff_sum = 0;
+    for (size_t i = 0; i < true_quality.size(); i++) {
+        diff_sum += std::abs(true_quality[i] - compressed_quality[i]);
+    }
+    return (double)diff_sum / true_quality.size();
+}
+
 void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
-    std::cout << "Inflated quality: \n" << nucleic_acid.InflateQuality() << std::endl;
+    std::cout << "Inflated compressed quality: \n" << nucleic_acid.InflateQuality() << std::endl << std::endl;
+    std::cout << "True quality: \n" << fragment->quality << std::endl << std::endl;
+    std::cout << "Avg compression loss: " << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
@@ -164,8 +176,10 @@ int main (int argc, char **argv) {
             std::cout << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
-            test_compression(fragments[0]);
-            std::cout << "Tested compression successfully." << std::endl;
+            for (std::int32_t i = 0; i < 3; i++) {
+                test_compression(fragments[i]);
+                std::cout << "Tested compression successfully." << std::endl << std::endl;
+            }
         }
     }
 

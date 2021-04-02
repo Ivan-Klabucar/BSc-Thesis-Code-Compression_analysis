@@ -49,8 +49,8 @@ double avg_compression_loss(std::string& true_quality, std::string compressed_qu
 
 void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
-    std::cout << "Inflated compressed quality: \n" << nucleic_acid.InflateQuality() << std::endl << std::endl;
-    std::cout << "True quality: \n" << fragment->quality << std::endl << std::endl;
+    // std::cout << "Inflated compressed quality: \n" << nucleic_acid.InflateQuality() << std::endl << std::endl;
+    // std::cout << "True quality: \n" << fragment->quality << std::endl << std::endl;
     std::cout << "Avg compression loss: " << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
 }
 
@@ -176,7 +176,7 @@ int main (int argc, char **argv) {
             std::cout << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
-            for (std::int32_t i = 0; i < 3; i++) {
+            for (std::int32_t i = 0; i < 30; i++) {
                 test_compression(fragments[i]);
                 std::cout << "Tested compression successfully." << std::endl << std::endl;
             }

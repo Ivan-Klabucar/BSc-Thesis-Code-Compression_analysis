@@ -13,12 +13,13 @@
 #include "biosoup/sequence.hpp"
 #include "biosoup/nucleic_acid.hpp"
 
-#define VERSION "v0.1.9"
+#define VERSION "v0.2.0"
 
 static int help_flag = 0;         /* Flag set by �--help�.    */
 static int version_flag = 0;      /* Flag set by �--version�. */
 static int quality_csv_flag = 0;      /* Flag set by �--file�. */
 static int test_flag = 0;      /* Flag set by �--test�. */
+static int only_avg_loss = 0;      /* Flag set by �--only-avg-loss�. */
 static std::string csv_filename;
 
 std::atomic<std::uint32_t> biosoup::Sequence::num_objects{0};
@@ -40,23 +41,21 @@ void make_quality_csv_file(const std::vector<std::unique_ptr<biosoup::Sequence>>
 
 double avg_compression_loss(std::string& true_quality, std::string compressed_quality) {
     if ( true_quality.size() != compressed_quality.size() ) throw std::invalid_argument("True quality and compressed quality not of same size!");
-    int64_t diff_sum = 0;
-    for (size_t i = 0; i < true_quality.size(); i++) {
-        diff_sum += std::abs(true_quality[i] - compressed_quality[i]);
+    std::int64_t diff_sum = 0;
+    for (size_t i = 0; i < compressed_quality.size(); i++) {
+        std::int32_t diff = std::abs(true_quality[i] - compressed_quality[i]);
+        if (!only_avg_loss) std::cout << std::to_string(diff) << std::endl;
+        diff_sum += diff;
     }
     return (double)diff_sum / true_quality.size();
 }
 
 void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
-    // std::cout << "Inflated compressed quality: \n" << nucleic_acid.InflateQuality() << std::endl << std::endl;
-    // std::cout << "True quality: \n" << fragment->quality << std::endl << std::endl;
-    std::cout << "Avg compression loss: " << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
+    std::cerr << "Avg compression loss: " << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
-    
-    
     uint64_t length_sum = 0;
     std::vector<size_t> lengths(fragments.size());
     for (int i = 0; i < int(fragments.size()); i++) {
@@ -102,13 +101,14 @@ int main (int argc, char **argv) {
                 {"help",    no_argument, &help_flag,    1},
                 {"version", no_argument, &version_flag, 1},
                 {"test", no_argument, &test_flag, 1},
+                {"--only-avg-loss", no_argument, &only_avg_loss, 1},
                 {"file-csv",    required_argument, 0, 'f'},
                 {0, 0, 0, 0}
             };
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "hvtf:",
+        c = getopt_long(argc, argv, "hvtof:",
                         long_options, &option_index);
 
         /* Detect the end of the options. */
@@ -129,6 +129,10 @@ int main (int argc, char **argv) {
         
         case 't':
             test_flag = 1;
+            break;
+        
+        case 'o':
+            only_avg_loss = 1;
             break;
 
         case 'f':
@@ -169,16 +173,16 @@ int main (int argc, char **argv) {
                 std::make_move_iterator(t.end()));
         }
         //printFragmentsInfo(fragments);
-        std::cout << "Fragmets successfully loaded." << std::endl;
+        std::cerr << "Fragmets successfully loaded." << std::endl;
 
         if (quality_csv_flag) {
             make_quality_csv_file(fragments);
-            std::cout << "CSV file successfully created." << std::endl;
+            std::cerr << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
-            for (std::int32_t i = 0; i < 30; i++) {
+            if (!only_avg_loss) std::cout << "CompLoss" << std::endl;
+            for (std::int32_t i = 0; i < fragments.size(); i++) {
                 test_compression(fragments[i]);
-                std::cout << "Tested compression successfully." << std::endl << std::endl;
             }
         }
     }

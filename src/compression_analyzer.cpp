@@ -19,7 +19,6 @@ static int help_flag = 0;         /* Flag set by �--help�.    */
 static int version_flag = 0;      /* Flag set by �--version�. */
 static int quality_csv_flag = 0;      /* Flag set by �--file�. */
 static int test_flag = 0;      /* Flag set by �--test�. */
-static int only_avg_loss = 0;      /* Flag set by �--only-avg-loss�. */
 static std::string csv_filename;
 
 std::atomic<std::uint32_t> biosoup::Sequence::num_objects{0};
@@ -43,16 +42,14 @@ double avg_compression_loss(std::string& true_quality, std::string compressed_qu
     if ( true_quality.size() != compressed_quality.size() ) throw std::invalid_argument("True quality and compressed quality not of same size!");
     std::int64_t diff_sum = 0;
     for (size_t i = 0; i < compressed_quality.size(); i++) {
-        std::int32_t diff = std::abs(true_quality[i] - compressed_quality[i]);
-        if (!only_avg_loss) std::cout << std::to_string(diff) << std::endl;
-        diff_sum += diff;
+        diff_sum += std::abs(true_quality[i] - compressed_quality[i]);
     }
     return (double)diff_sum / true_quality.size();
 }
 
 void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
-    std::cerr << "Avg compression loss: " << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
+    std::cout << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
@@ -87,6 +84,7 @@ const std::string HELP_MESSAGE = "compression_analyzer usage: \n\n"
                                  "flags: \n"
                                  "-h or --help     prints help message \n"
                                  "-v or --version  prints version      \n"
+                                 "-t or --test  prints to std::cout avg loss for evry sequence \n"
                                  "-f or --file-csv  takes path to csv file that fill be filled with quality score frequencies\n"
                                  "\ncompression_analyzer takes one FASTQ filename as a command line argument.\n";
 
@@ -101,14 +99,13 @@ int main (int argc, char **argv) {
                 {"help",    no_argument, &help_flag,    1},
                 {"version", no_argument, &version_flag, 1},
                 {"test", no_argument, &test_flag, 1},
-                {"--only-avg-loss", no_argument, &only_avg_loss, 1},
                 {"file-csv",    required_argument, 0, 'f'},
                 {0, 0, 0, 0}
             };
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "hvtof:",
+        c = getopt_long(argc, argv, "hvtf:",
                         long_options, &option_index);
 
         /* Detect the end of the options. */
@@ -129,10 +126,6 @@ int main (int argc, char **argv) {
         
         case 't':
             test_flag = 1;
-            break;
-        
-        case 'o':
-            only_avg_loss = 1;
             break;
 
         case 'f':
@@ -180,7 +173,6 @@ int main (int argc, char **argv) {
             std::cerr << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
-            if (!only_avg_loss) std::cout << "CompLoss" << std::endl;
             for (std::int32_t i = 0; i < fragments.size(); i++) {
                 test_compression(fragments[i]);
             }

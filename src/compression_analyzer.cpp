@@ -173,6 +173,7 @@ int main (int argc, char **argv) {
             std::cerr << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
+            std::cout << "AvgLoss" << std::endl;
             for (std::int32_t i = 0; i < fragments.size(); i++) {
                 test_compression(fragments[i]);
             }

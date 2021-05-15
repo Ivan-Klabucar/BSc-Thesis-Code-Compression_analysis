@@ -47,9 +47,9 @@ double avg_compression_loss(std::string& true_quality, std::string compressed_qu
     return (double)diff_sum / true_quality.size();
 }
 
-void test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
+double test_compression(std::unique_ptr<biosoup::Sequence>& fragment) {
     biosoup::NucleicAcid nucleic_acid = biosoup::NucleicAcid(fragment->name, fragment->data, fragment->quality);
-    std::cout << std::to_string(avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality())) << std::endl;
+    return avg_compression_loss(fragment->quality, nucleic_acid.InflateQuality());
 }
 
 void printFragmentsInfo(const std::vector<std::unique_ptr<biosoup::Sequence>>& fragments) {
@@ -173,10 +173,11 @@ int main (int argc, char **argv) {
             std::cerr << "CSV file successfully created." << std::endl;
         }
         if (test_flag) {
-            std::cout << "AvgLoss" << std::endl;
+            long double loss_sum = 0.0;
             for (std::int32_t i = 0; i < fragments.size(); i++) {
-                test_compression(fragments[i]);
+                loss_sum += test_compression(fragments[i]);
             }
+            std::cout << std::to_string(loss_sum / fragments.size()) << std::endl;
         }
     }
 

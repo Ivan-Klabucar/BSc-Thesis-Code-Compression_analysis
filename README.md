@@ -1,4 +1,4 @@
-# Compression_analysis
+# Compression Analysis – BSc Thesis
 Tool for generating csv files of phred quality score distributions of FASTQ reads,
 and for calculating the mean error of phred quality compression used in the Biosoup module.
 
